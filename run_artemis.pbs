@@ -14,8 +14,25 @@ cd $PBS_O_WORKDIR
 # If these are not set, it defaults to your home foler which will fill up very quickly.
 export SINGULARITY_CACHEDIR=`pwd`
 export SINGULARITY_TMPDIR=`pwd`
-singularity build spaceranger.img docker://sydneyinformaticshub/spaceranger:centos7
+singularity build monai.img docker://sydneyinformaticshub/monailabel
 
 ### 2 EXAMPLE WORKFLOW ###
-# Remove the build commands above and execute:
-singularity run --bind /project:/project sapceranger.img /bin/bash -c "export TENX_IGNORE_DEPRECATED_OS=1; spaceranger testrun --id=tiny"
+
+#PBS -P <YOUR_PROJECT>
+#PBS -l select=1:ncpus=4:mem=16gb:ngpus=2
+#PBS -l walltime=4:00:00
+#PBS -N job02
+#PBS -m b
+#PBS -M nathaniel.butterworth@syndey.edu.au
+
+cd $PBS_O_WORKDIR
+module load singularity cuda/10.2.89
+
+echo hostanme >> host.txt
+
+singularity run --nv monai.img /bin/bash -c "cd "$PBS_O_WORKDIR" && \
+  monailabel apps --download --name radiology && \
+  monailabel datasets --download --name Task09_Spleen && \
+  monailabel start_server --app radiology --studies Task09_Spleen/imagesTr --conf models segmentation"
+
+  #monailabel start_server --app pathology --studies Task09_Spleen/ --conf pretrained False
